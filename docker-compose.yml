@@ -1,0 +1,47 @@
+services:
+  nginx:
+    build: ./nginx
+    ports:
+      - 1337:80
+    depends_on:
+      - web
+      - www
+    volumes:
+      - static_volume:/home/app/web/staticfiles
+      - media_volume:/home/app/web/mediafiles
+  www:
+    build:
+      context: https://github.com/patrickbindelli/gestao-tcc-front.git
+      dockerfile: Dockerfile.prod
+    command: pnpm start
+    expose:
+      - 3000
+    env_file:
+      - ./.env
+    depends_on:
+      - web
+  web:
+    build:
+      context: https://github.com/patrickbindelli/gestao-tcc-back.git
+      dockerfile: Dockerfile.prod
+    command: gunicorn core.wsgi:application --bind 0.0.0.0:8000
+    expose:
+      - 8000
+    env_file:
+      - ./.env
+    volumes:
+      - static_volume:/home/app/web/staticfiles
+      - media_volume:/home/app/web/mediafiles
+    depends_on:
+      - db
+  db:
+    image: postgres:15
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    env_file:
+      - ./.env.db
+
+volumes:
+  postgres_data:
+  static_volume:
+  media_volume:
